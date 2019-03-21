@@ -113,7 +113,7 @@ for file_name in src_files[18:-1]:
 	convertMultiple(pdfDir, txtDir)
 ```
 
-### prepocessing the minutes
+### Prepocessing the minutes
 
 Because of the conversion from pdf, some texts have been concatenated or carbled, we use re to replace all carbled characters and viterbi algorithm to seperate words.
 
@@ -263,7 +263,7 @@ minutes_tfidf_sk = pd.concat([minutes,df_tfidfScaled],axis = 1)
 
 ```
 
-### removing less frequent words and scaling the documents
+### Removing less frequent words and scaling the documents
 
 Then we use different packages of nlp and text analytics to create document-word matrix for furthur analysis, then remove the words that shows up in few docs and scale every document
 
@@ -315,11 +315,12 @@ df_tfidfScaled = pd.DataFrame(tfidfScaled,columns=df_Annualtfidf.columns)
 minutes_tfidf_sk = pd.concat([minutes,df_tfidfScaled],axis = 1)
 ```
 
-### Calculating the interest rate change between two FOMC meetings and calculating the correlation between words and FED rate change
+### Calculating the interest rate change between two FOMC meetings and the correlation between words and FED rate change
 
 We use FED rate daily data from website [**macrotrends**](https://www.macrotrends.net/2015/fed-funds-rate-historical-chart), and merge it with the FOMC minutes in the public release date(around 23 days later of the meeting date), then calculate the FED rate difference between two minutes.
 
 After that, we calculate the top 20 words that are most correlated with FED rate change.
+
 ```Python
 
 # import interest rate data and merge them
