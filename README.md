@@ -9,6 +9,12 @@ Then we use machine learning to find a best model to predict the interest rate c
 
 We then turn to some industry level data such as REIT index from 1977 to 2018, the result is even much better.
 
+### What is the FOMC minutes and why is it important for interest rate prediction?
+
+* Over time, the Fed has substantially increased its level of transparency thereby aiming at making monetary policy more effective. 
+* The release of the minutes can have a sizable impact on Treasury bond yields. The impacts are largest when the tone of the minutes differs from the tone of the statement. This presumably leads markets to change their expectations of future monetary policy.
+* The Fed is a highly predictable central bank and its communications have helped markets to anticipate future policy rate changes. The policy decision and communications by which the Fed or its officials explain monetary policy may have an impact on the market assessment of the future monetary policy course. 
+
 ### Scraping the FOMC website
 
 We first use request and bs4 to download pdf version minutes from different links presented in the FOMC websites.
@@ -112,7 +118,35 @@ for file_name in src_files[18:-1]:
 Because of the conversion from pdf, some texts have been concatenated or carbled, we use re to replace all carbled characters and viterbi algorithm to seperate words.
 
 ```Python
+##single minutes interval, signTerms for tfidf
+import os
+from dfply import *
+import pandas as pd
+import re
+from sklearn import preprocessing
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import CountVectorizer
+from multiprocessing import Pool
+import warnings
+from nltk.stem import WordNetLemmatizer
+warnings.filterwarnings("ignore",category=DeprecationWarning)
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['axes.unicode_minus'] = False
+import statsmodels.api as sm
+minutes = pd.read_csv(r'C:\Users\Comete\Desktop\MFinRelated\nlp\NLPTA_project-master\NLPTA_project-master\docs.csv')
 
+from collections import Counter
+
+
+def word_prob(word): 
+    return dictionary[word]/total
+	
+	
+def words(text): 
+    return re.findall('[a-z]+', text.lower()) 
+	
 def viterbi_segment(text):
     probs, lasts = [1.0], [0]
     for i in range(1, len(text) + 1):
@@ -128,7 +162,42 @@ def viterbi_segment(text):
     words.reverse()
     return words, probs[-1]
 
-def lemmatization(data, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']): # Do lemmatization keeping only noun, adj, vb, adv
+dictionary = Counter(words(open(r'C:\Users\Comete\big.txt').read()))
+max_word_length = max(map(len, dictionary))
+total = float(sum(dictionary.values()))
+
+
+# 1. data processing
+minutes.pop(minutes.columns[0])
+from nltk.corpus import stopwords
+import spacy
+nlp = spacy.load('en_core_web_sm',disable=['parser', 'ner'])
+
+stop_words = stopwords.words('english')
+
+import datetime
+Month = [datetime.date(2008, i, 1).strftime('%B').lower() for i in range(1,13)]
+stop_words.extend(['year','month','day','mr','meeting','committee','ms','federal','page']
+                    + Month)
+
+import gensim
+def sent_to_words(sentences):
+    for sentence in sentences:
+        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
+
+texts = list(sent_to_words(minutes['content']))
+
+bigram = gensim.models.Phrases(texts, min_count=5, threshold=100) # higher threshold fewer phrases.
+bigram_mod = gensim.models.phrases.Phraser(bigram)
+
+from gensim.utils import simple_preprocess
+def remove_stopwords(texts):
+    return [[word for word in simple_preprocess(str(doc)) if word not in stop_words] for doc in texts]
+
+def make_bigrams(texts):
+    return [bigram_mod[doc] for doc in texts]
+
+def lemmatization(data, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
     texts_out = []
     for sent in data:
         doc = nlp(re.sub('\_',''," ".join(sent)))
@@ -139,9 +208,62 @@ def lemmatization(data, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']): # Do le
                 new_tokens.append(j)
         texts_out.append(new_tokens)
     return texts_out
+
+corpus_no_stops = remove_stopwords(texts)
+corpus_bigrams = make_bigrams(corpus_no_stops)
+set(['infla_tion' in word for word in corpus_bigrams])
+data_lemmatized = lemmatization(corpus_bigrams, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
+
+corpus = [' '.join(wordList) for wordList in data_lemmatized]
+set(['infla_tion' in word for word in corpus])
+
+# bag of words with sklearn
+vectorizer = CountVectorizer(stop_words = 'english',lowercase = True)
+AnnualBow = vectorizer.fit_transform(corpus)
+df_AnnualBow = pd.DataFrame(AnnualBow.A,columns = vectorizer.get_feature_names())
+for term in ['year','month','day']:
+    try:
+        df_AnnualBow.pop(term)
+    except:
+        continue
+
+'month' in df_AnnualBow.columns
+
+df_AnnualBow.astype(bool).sum(axis=1)
+frequency = df_AnnualBow.astype(bool).sum(axis=0)
+less = frequency[frequency<3]
+df_AnnualBow=df_AnnualBow.drop(less.index,axis=1)
+
+##remove thoes meaningness words
+
+bowScaled = preprocessing.scale(df_AnnualBow)
+df_bowScaled = pd.DataFrame(bowScaled,columns=df_AnnualBow.columns)
+minutes_BoW_sk2 = pd.concat([minutes,df_bowScaled],axis = 1)
+
+# tf-idf sklearn
+v = TfidfVectorizer(stop_words='english', max_df=0.9)
+tfidf = v.fit_transform(corpus)
+df_Annualtfidf = pd.DataFrame(tfidf.A,columns = v.get_feature_names())
+
+for term in ['year','month','day']:
+    try:
+        df_Annualtfidf.pop(term)
+    except:
+        continue
+
+df_Annualtfidf.astype(bool).sum(axis=1)
+frequency2 = df_Annualtfidf.astype(bool).sum(axis=0)
+less2 = frequency2[frequency<3]
+df_Annualtfidf=df_Annualtfidf.drop(less2.index,axis=1)
+		
+tfidfScaled = preprocessing.scale(df_Annualtfidf)
+df_tfidfScaled = pd.DataFrame(tfidfScaled,columns=df_Annualtfidf.columns)
+minutes_tfidf_sk = pd.concat([minutes,df_tfidfScaled],axis = 1)
+
+
 ```
 
-### converting the documents into bow or tf-idf
+### removing less frequent words and scaling the documents
 
 Then we use different packages of nlp and text analytics to create document-word matrix for furthur analysis, then remove the words that shows up in few docs and scale every document
 
@@ -193,38 +315,75 @@ df_tfidfScaled = pd.DataFrame(tfidfScaled,columns=df_Annualtfidf.columns)
 minutes_tfidf_sk = pd.concat([minutes,df_tfidfScaled],axis = 1)
 ```
 
-### Calculating the interest rate change between two FOMC meetings
+### Calculating the interest rate change between two FOMC meetings and calculating the correlation between words and FED rate change
 
 We use FED rate daily data from website [**macrotrends**](https://www.macrotrends.net/2015/fed-funds-rate-historical-chart), and merge it with the FOMC minutes in the public release date(around 23 days later of the meeting date), then calculate the FED rate difference between two minutes.
+
+After that, we calculate the top 20 words that are most correlated with FED rate change.
 ```Python
 
-## Import interest rate data and merge them
+# import interest rate data and merge them
 IR = pd.read_csv(r'C:\Users\Comete\Desktop\MFinRelated\nlp\NLPTA_project-master\NLPTA_project-master\fed-funds-rate-historical-chart.csv')
 IR >> head(3)
 
-# Format date
 minutes_BoW_sk2['oldDate'] =pd.to_datetime(minutes_BoW_sk2['file_name'],format='%Y%m%d',errors='ignore')
 minutes_tfidf_sk['oldDate'] =pd.to_datetime(minutes_tfidf_sk['file_name'],format='%Y%m%d',errors='ignore')
 IR['Date'] = pd.to_datetime(IR['date'],format='%Y/%m/%d',errors='ignore')
 
-# It usually takes 20-22 days from the FOMC meeting to the publicly release of FOMC minutes
 minutes_BoW_sk2['Date'] = minutes_BoW_sk2['oldDate'] + datetime.timedelta(days=23)
 minutes_tfidf_sk['Date'] = minutes_tfidf_sk['oldDate'] + datetime.timedelta(days=23)
 
-# Merge the date
 bow_IR = pd.merge(IR,minutes_BoW_sk2,on = 'Date',how = 'left')
+
 tfIdf_IR = pd.merge(IR,minutes_tfidf_sk,on = 'Date',how = 'left')
-bow_IR_diff = bow_IR.dropna()
-bow_IR_diff['rateChange'] = bow_IR_diff['fedRate'].shift(-1) - bow_IR_diff['fedRate']
+
+tfIdf_IR_diff = bow_IR.dropna()
+tfIdf_IR_diff['rateChange'] = tfIdf_IR_diff['fedRate'].shift(-1) - tfIdf_IR_diff['fedRate']
 tfIdf_IR_diff = tfIdf_IR.dropna()
 tfIdf_IR_diff['rateChange'] = tfIdf_IR_diff['fedRate'].shift(-1) - tfIdf_IR_diff['fedRate']
+
+def CorTerms(terms,df_sum,y,top = None,bottom = None):
+    correlations = [np.corrcoef(y,df_sum[term])[0,1]
+                    for term in list(terms)]## change the index
+    IR_corTerms = pd.DataFrame({'keyterms':terms,'correlations':correlations})
+    top = IR_corTerms.sort_values(by = 'correlations',ascending = False) >> head(top)
+    bottom = IR_corTerms.sort_values(by = 'correlations',ascending = True) >> head(bottom)
+    return IR_corTerms,top,bottom
+
+def corBar(x,y):
+    plt.barh(range(len(x)), y, height=0.7, color='steelblue', alpha=0.8) 
+    plt.yticks(range(len(x)), x)
+    plt.xlabel("correlations")
+    plt.ylabel('keyterms')
+    plt.title(" correlations with IR change")
+    plt.show()
+
+tfIdf_IR_diff = tfIdf_IR_diff.dropna()
+tfIdf_IR_diff=tfIdf_IR_diff.drop(['date_x','year','month','day','file_name','oldDate','content'],axis=1)
+tfIdf_IR_diff.sort_values(by=['Date','rateChange'],ascending = True)
+CorBowIR = CorTerms(tfIdf_IR_diff.columns[2:-1],tfIdf_IR_diff,tfIdf_IR_diff['rateChange'],top = 20,bottom = 20)
+bow_top = CorBowIR[1]
+bow_bottom = CorBowIR[2]
+corBar(bow_top['keyterms'],bow_top['correlations'])
+corBar(bow_bottom['keyterms'],bow_bottom['correlations'])
+
+tfIdf_IR_diff = tfIdf_IR_diff.dropna()
+tfIdf_IR_diff=tfIdf_IR_diff.drop(['date_x','year','month','day','file_name','oldDate','content'],axis=1)
+tfIdf_IR_diff.sort_values(by=['Date','rateChange'],ascending = True)
+CorTfidfIR = CorTerms(tfIdf_IR_diff.columns[2:-1],tfIdf_IR_diff,tfIdf_IR_diff['rateChange'],top = 20,bottom = 20)
+tfIdf_top = CorTfidfIR[1]
+tfIdf_bottom = CorTfidfIR[2]
+corBar(tfIdf_top['keyterms'],tfIdf_top['correlations'])
+corBar(tfIdf_bottom['keyterms'],tfIdf_bottom['correlations'])
+
+
 ```
 
 ### Logistic regression with FED rate moving direction
 
 We first try to use OLS regression to predict the actual change of FED rate or use LSA to find out some interesting pattern in the documents, but none of them work well. 
 
-So we turn our attention to predict the FED rate moving direction (up or down) by machine learning algorithm, using words that are statistically significant in logistic regression.
+So we turn our attention to predict the FED rate moving direction (up or down) by different machine learning algorithm, using words that are statistically significant in logistic regression.
 
 ```Python
 
