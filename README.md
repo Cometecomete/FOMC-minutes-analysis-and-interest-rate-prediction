@@ -1,7 +1,5 @@
 # FOMC minutes analysis and interest rate prediction
 
-![group symbol](https://raw.githubusercontent.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/master/4D-Intelli.png)
-
 ### Overall
 Using NLP text analytics and machine learning to predict the interest rate change between two FOMC meetings
 
@@ -370,3 +368,10 @@ We have done something else such as calculating the most correlated words in ter
 We believe there still are so many improvements that could be done such as change the definition of the interest rate change and try to predict the moving direction after one month or six months after every minutes released; or use other industry data such as finance industry to see the predictive power; or simply improve the documents accuracy by manually checking.
 
 But overall, we can conclude that using FOMC minutes we can have a relatively actual predictive power on FED interest rate change direction and relative industry performance.
+
+Any comments or questions, please contact email: yuhang.xia@outlook.com
+
+Thanks for reading!
+
+![group symbol](https://raw.githubusercontent.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/master/4D-Intelli.png)
+
