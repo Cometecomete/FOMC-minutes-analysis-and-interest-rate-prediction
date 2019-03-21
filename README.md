@@ -354,3 +354,14 @@ gs.score(X_test,y_test)
 
 And we have tried different parameters and different method to increase our predictive power, the results are as below:
 
+![best model results in different methods](https://github.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/blob/master/best%20model%20results%20in%20different%20methods.png)
+
+Then we turn to the real estate industry level data, the predictive power is even better as below (you can check all the code in our code file):
+
+![best model results for real estate industry](https://github.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/blob/master/best%20model%20results%20for%20real%20estate%20industry.png)
+
+### Conclusion and others
+
+We have done something else such as calculating the most correlated words in terms of FED rate change and get some meaningful words that have strong tendency, supporting our results to some extent. We think one possible explanation that our industry models work better is because that all the large companies in real estate industry pay a lot attention on the FOMC meetings and thus the FOMC minutes mean a lot to them, leading to a better correlation and prediction of the future performance in the industry.  
+We believe there still are so many improvements that could be done such as change the definition of the interest rate change and try to predict the moving direction after one month or six months after every minutes released; or use other industry data such as finance industry to see the predictive power; or simply improve the documents accuracy by manually checking.  
+But overall, we can conclude that using FOMC minutes we can have a relatively actual predictive power on FED interest rate change direction and relative industry performance.
