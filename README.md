@@ -1,4 +1,7 @@
 # FOMC minutes analysis and interest rate prediction
+
+![group symbol](https://raw.githubusercontent.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/master/4D-Intelli.png)
+
 ### Overall
 Using NLP text analytics and machine learning to predict the interest rate change between two FOMC meetings
 
@@ -354,11 +357,11 @@ gs.score(X_test,y_test)
 
 And we have tried different parameters and different method to increase our predictive power, the results are as below:
 
-![best model results in different methods](https://github.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/blob/master/best%20model%20results%20in%20different%20methods.png)
+![best model results in different methods](https://raw.githubusercontent.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/master/best%20model%20results%20in%20different%20methods.png)
 
 Then we turn to the real estate industry level data, the predictive power is even better as below (you can check all the code in our code file):
 
-![best model results for real estate industry](https://github.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/blob/master/best%20model%20results%20for%20real%20estate%20industry.png)
+![best model results for real estate industry](https://raw.githubusercontent.com/Cometecomete/FOMC-minutes-analysis-and-interest-rate-prediction/master/best%20model%20results%20for%20real%20estate%20industry.png)
 
 ### Conclusion and others
 
